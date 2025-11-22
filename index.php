@@ -4,7 +4,7 @@
 
     include("bd.php");
 
-    $qr = "select texto from textos where nome='sobrenos'";		
+    $qr = "select texto from textos where nome='sobrenos'";
     $ordem = $ms->prepare($qr);
     $ordem->execute();
     $ordem->bind_result($sobrenos);
@@ -18,7 +18,7 @@
     $ordem->fetch();
     $ordem->close();
 
-    $qr = "select texto from textos where nome='produtos'";		
+    $qr = "select texto from textos where nome='produtos'";
     $ordem = $ms->prepare($qr);
     $ordem->execute();
     $ordem->bind_result($produtos);
@@ -250,42 +250,6 @@
                             <div class="line"></div>
                             <h6 class="name">Jorge Monteiro</h6>
                             <h6 class="xs-font"><?php echo $cjorge; ?></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="textmonial-item">
-                        <img src="assets/imgs/marcio.jpg" class="avatar" alt="Marcio">
-                        <div class="des">
-                            <p><?php echo $marcio; ?></p>
-
-                            <div class="line"></div>
-                            <h6 class="name">Marcio Silva</h6>
-                            <h6 class="xs-font"><?php echo $cmarcio; ?></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="textmonial-item">
-                        <img src="assets/imgs/leandro.png" class="avatar" alt="leandro">
-                        <div class="des">
-                            <p><?php echo $leandro; ?></p>
-
-                            <div class="line"></div>
-                            <h6 class="name">Leandro Monteiro</h6>
-                            <h6 class="xs-font"><?php echo $cleandro; ?></h6>
-                        </div>
-                    </div>
-                </div>
-                <div class="item">
-                    <div class="textmonial-item">
-                        <img src="assets/imgs/marcio.jpg" class="avatar" alt="leandro">
-                        <div class="des">
-                            <p><?php echo $lucia; ?></p>
-
-                            <div class="line"></div>
-                            <h6 class="name">Lúcia Monteiro</h6>
-                            <h6 class="xs-font"><?php echo $clucia; ?></h6>
                         </div>
                     </div>
                 </div>
