@@ -1,0 +1,18 @@
+#eventos{
+    margin-top: 8%;
+    text-align: center;
+}
+
+#p{
+    margin-top: 5%;
+}
+
+#hh{
+    text-align: center;
+}
+
+@media (max-width: 360px){
+    #hh{
+        font-size: medium;
+    }
+}
