@@ -74,13 +74,10 @@
                         <a class="nav-link" href="index.php">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="blog.php">Blog</a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link" href="contacto.php">Contacto</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="automatoslogin.php">Autómatos</a>
+                        <a class="nav-link" href="https://ajax.systems/pt/tools/configurator/glmsystem/">Configurador</a>
                     </li>
                     <li class="nav-item ml-0 ml-lg-4">
                         <a class="nav-link btn btn-primary" href="catalogo.php" style="color: #ffffff;">Catálogo Online</a>

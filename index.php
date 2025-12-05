@@ -141,7 +141,7 @@
             <div class="socials text-right">
                 <div class="row justify-content-between">
                     <div class="col">
-                        <a class="d-block subtitle"><i class="ti-microphone pr-2"></i>(+351)&nbsp;&nbsp; 9 3 5 9 1 4 6 8 1</a>
+                        <a class="d-block subtitle"><i class="ti-microphone pr-2"></i>(+351)&nbsp;&nbsp; 9 6 6 7 0 2 3 2 6</a>
                         <a class="d-block subtitle"><b>(Chamada para a rede móvel nacional)</b></a>
                         <a class="d-block subtitle" href="mailto: geral@glmsystem.com" style="color: white;"><i class="ti-email pr-2"></i>geral@glmsystem.com</a>
                     </div>
@@ -206,50 +206,6 @@
                         <div class="infos-wrapper">
                             <h4 class="text-primary"><?php echo $clientes; ?></h4>
                             <p>Clientes</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <section class="section" id="portfolio">
-        <div class="container">
-            <h3 class="section-title pb-4">Nossos Serviços</h3>
-            <h6 class="xs-font mb-0">Categorias:</h6>
-        </div>
-
-        <div id="owl-portfolio" class="owl-carousel owl-theme mt-4">
-        <?php
-        $sq="select * from servicos";
-        $results = $ms->query($sq);
-        while($row = $results->fetch_array()) { ?>
-            <a href="javascript:void(0)" class="item expertises-item">
-                <img src="backoffice/page/<?php echo $row["imagem"] ?>"alt="imagem" class="box-shadow image-center" style="width: 50%;">
-                <h6 class="mt-3 mb-2" style="text-align: center;"><?php echo $row["titulo"] ?></h6>
-                <p class="xs-font" style="text-align: center;"><?php echo $row["texto"] ?></p>
-            </a>
-            <?php
-        }
-        ?>
-        <div>
-    </section>
-
-
-    <section class="section" id="testmonial">
-        <div class="container">
-            <h3 class="section-title">Nossa equipa:</h3>
-
-            <div id="owl-testmonial" class="owl-carousel owl-theme mt-4">
-                <div class="item">
-                    <div class="textmonial-item">
-                        <img src="assets/imgs/jorge.jpg" class="avatar" alt="Jorge">
-                        <div class="des">
-                            <p><?php echo $jorge; ?></p>
-
-                            <div class="line"></div>
-                            <h6 class="name">Jorge Monteiro</h6>
-                            <h6 class="xs-font"><?php echo $cjorge; ?></h6>
                         </div>
                     </div>
                 </div>

@@ -6,112 +6,108 @@
 
     if (isset($_POST['alterar']))
     {
-
-        if($_POST['categoria3']=='' || $_POST['categoria4']==''){
-            $msg="ERRO, tem de preencher algum campo!";
+        if($_POST['categoria3']==''){
+            $msg="ERRO, tem de preencher o nome da categoria!";
         }
         else
         {
-                $qr = "update categorias set nome=?, correspondente=? where id='".$_POST["id"]."'";
+            if (isset($_FILES['foto']) && $_FILES['foto']['size'] > 0){
+                $destino = "uploads/cat_" . uniqid() . ".jpg";
+                if($_FILES["foto"]["type"]=="image/jpeg" || $_FILES["foto"]["type"]=="image/jpg" || $_FILES["foto"]["type"]=="image/png"){
+                    if(move_uploaded_file($_FILES['foto']['tmp_name'], $destino)) {
+                        $qr = "update categorias set nome=?, imagem=?, descricao=? where id='".$_POST["id"]."'";
+                        $ordem = $ms->prepare($qr);
+                        $ordem->bind_param('sss', $_POST["categoria3"], $destino, $_POST["descricao3"]);
+                    }
+                }
+            }
+            else{
+                $qr = "update categorias set nome=?, descricao=? where id='".$_POST["id"]."'";
                 $ordem = $ms->prepare($qr);
-                $ordem->bind_param('ss', $_POST["categoria3"], $_POST["categoria4"]);
-        }
-        if ($ordem->execute() && $ordem->affected_rows>0){
+                $ordem->bind_param('ss', $_POST["categoria3"], $_POST["descricao3"]);
+            }
             
-        }
-        else{
-            $msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
-            $erro=1;
-        }
-        $ordem->close();
-    }
-
-    if (isset($_POST['alterar']))
-    {
-
-        if($_POST['categoria3']=='' || $_POST['categoria4']==''){
-            $msg="ERRO, tem de preencher algum campo!";
-        }
-        else
-        {
-                $qr = "update pesquisa set nome=? where id='".$_POST["id"]."'";
-                $ordem = $ms->prepare($qr);
-                $ordem->bind_param('s', $_POST["categoria3"]);
-        }
-        if ($ordem->execute() && $ordem->affected_rows>0){
+            if ($ordem->execute() && $ordem->affected_rows>0){
+                $msg='<h3 class="sucesso">Categoria atualizada!</h3>';
+            }
+            else{
+                $msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
+                $erro=1;
+            }
+            $ordem->close();
             
+            // Atualizar também tabela pesquisa
+            $qr2 = "update pesquisa set nome=? where nome='".$_POST["nome_antigo"]."'";
+            $ordem2 = $ms->prepare($qr2);
+            $ordem2->bind_param('s', $_POST["categoria3"]);
+            $ordem2->execute();
+            $ordem2->close();
         }
-        else{
-            $msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
-            $erro=1;
-        }
-        $ordem->close();
     }
     
     if (isset($_POST['eliminar']))
     {
-
         if($_POST['id']==''){
             $msg="ERRO, Ocorreu um problema da nossa parte! Tente mais tarde!";
         }
         else
         {
+            // Eliminar da tabela categorias
             $qr = "delete from categorias where id=?";
             $ordem = $ms->prepare($qr);
             $ordem->bind_param('i', $_POST["id"]);
             if ($ordem->execute() && $ordem->affected_rows>0){
-                
+                $msg='<h3 class="sucesso">Categoria eliminada!</h3>';
             }
             else{
                 $msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
                 $erro=1;
             }
             $ordem->close();
-        }
-    }
-
-    if (isset($_POST['eliminar']))
-    {
-
-        if($_POST['categoria3']==''){
-            $msg="ERRO, Ocorreu um problema da nossa parte! Tente mais tarde!";
-        }
-        else
-        {
-            $qr = "delete from pesquisa where nome=?";
-            $ordem = $ms->prepare($qr);
-            $ordem->bind_param('s', $_POST["categoria3"]);
-            if ($ordem->execute() && $ordem->affected_rows>0){
-                
+            
+            // Eliminar também da tabela pesquisa
+            if(!empty($_POST['categoria3'])){
+                $qr2 = "delete from pesquisa where nome=?";
+                $ordem2 = $ms->prepare($qr2);
+                $ordem2->bind_param('s', $_POST["categoria3"]);
+                $ordem2->execute();
+                $ordem2->close();
             }
-            else{
-                $msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
-                $erro=1;
-            }
-            $ordem->close();
         }
     }
 
     if(isset($_POST['inserir']))
 	{
-		if(isset($_POST['categoria1']) && isset($_POST['categoria2']))
+		if(isset($_POST['categoria1']))
 		{
-		
-			if($_POST['categoria1']==''|| $_POST['categoria2']==''){
-				$msg='<h3 class="erro">Erro, Existem campos por preencher!</h3>';
+			if($_POST['categoria1']==''){
+				$msg='<h3 class="erro">Erro, Preencha o nome da categoria!</h3>';
 			}
 			else{
-			
-				$qr = "INSERT INTO categorias(nome, correspondente) VALUES(?,?)";
+				$destino = "";
 				
+				// Upload de imagem
+				if (isset($_FILES['foto']) && $_FILES['foto']['size'] > 0){
+					$destino = "uploads/cat_" . uniqid() . ".jpg";
+					if($_FILES["foto"]["type"]=="image/jpeg" || $_FILES["foto"]["type"]=="image/jpg" || $_FILES["foto"]["type"]=="image/png"){
+						move_uploaded_file($_FILES['foto']['tmp_name'], $destino);
+					}
+				}
+				
+				// Inserir na tabela categorias
+				$qr = "INSERT INTO categorias(nome, imagem, descricao) VALUES(?,?,?)";
 				$ordem = $ms->prepare($qr);
+				$ordem->bind_param('sss', $_POST["categoria1"], $destino, $_POST["descricao1"]);
 				
-				$ordem->bind_param('ss', $_POST["categoria1"], $_POST["categoria2"]);
-				
-	
-				// Executar o query (verificar se não dá erro e o número de registos afetados)
 				if ($ordem->execute() && $ordem->affected_rows>0){
-					$msg='<h3 class="sucesso">O produto foi inserido!</h3>';
+					$msg='<h3 class="sucesso">A categoria foi inserida!</h3>';
+					
+					// Inserir também na tabela pesquisa
+					$qr2 = "INSERT INTO pesquisa(nome) VALUES(?)";
+					$ordem2 = $ms->prepare($qr2);
+					$ordem2->bind_param('s', $_POST["categoria1"]);
+					$ordem2->execute();
+					$ordem2->close();
 				}
 				else{
 					$msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
@@ -121,45 +117,9 @@
             }
 		}
 		else{
-			$msg='<h3 class="erro">Erro, Existem campos por preencher!</h3>';
+			$msg='<h3 class="erro">Erro, Preencha o nome da categoria!</h3>';
 			$erro=1;
 		}
-			
-	}
-
-    if(isset($_POST['inserir']))
-	{
-		if(isset($_POST['categoria1']) && isset($_POST['categoria2']))
-		{
-		
-			if($_POST['categoria1']==''|| $_POST['categoria2']==''){
-				$msg='<h3 class="erro">Erro, Existem campos por preencher!</h3>';
-			}
-			else{
-			
-				$qr = "INSERT INTO pesquisa(nome) VALUES(?)";
-				
-				$ordem = $ms->prepare($qr);
-				
-				$ordem->bind_param('s', $_POST["categoria1"]);
-				
-	
-				// Executar o query (verificar se não dá erro e o número de registos afetados)
-				if ($ordem->execute() && $ordem->affected_rows>0){
-					$msg='<h3 class="sucesso">O produto foi inserido!</h3>';
-				}
-				else{
-					$msg='<h3 class="erro" >Erro: ('. $ms->errno .') '. $ms->error . '</h3>';
-					$erro=1;
-				}
-				$ordem->close();
-            }
-		}
-		else{
-			$msg='<h3 class="erro">Erro, Existem campos por preencher!</h3>';
-			$erro=1;
-		}
-			
 	}
 
 ?>
@@ -181,15 +141,17 @@
                                     echo '<table class="table table-bordered" id="dataTable1" style="width: 1000px; overflow-x: scroll;" cellspacing="0"';
                                     echo '<thead>';
                                     echo '<tr>';
-                                    echo '<th style="text-align: center;"><b>Categoria</b></th>';
-                                    echo '<th style="text-align: center;">Correspondente</th>';
+                                    echo '<th style="text-align: center;"><b>Imagem</b></th>';
+                                    echo '<th style="text-align: center;"><b>Nome da Categoria</b></th>';
+                                    echo '<th style="text-align: center;"><b>Descrição</b></th>';
                                     echo '<th colspan="2"></th>';
                                     echo '</tr>';
                                     echo '</thead>';
                                     echo '<tfoot>';
                                     echo '<tr>';
-                                    echo '<th style="text-align: center;"><b>Categoria</b></th>';
-                                    echo '<th style="text-align: center;">Correspondente</th>';
+                                    echo '<th style="text-align: center;"><b>Imagem</b></th>';
+                                    echo '<th style="text-align: center;"><b>Nome da Categoria</b></th>';
+                                    echo '<th style="text-align: center;"><b>Descrição</b></th>';
                                     echo '<th colspan="2"></th>';
                                     echo '</tr>';
                                     echo '</tfoot>';
@@ -201,30 +163,10 @@
                                     <?php
                                     echo '</tr>';
                                     echo '<tr>';
-                                    echo '<th><input class="form-control" type="text" id="categoria1" name="categoria1" style="width: 100%;"></th>';
+                                    echo '<th><input class="form-control" type="file" id="foto" name="foto" accept="image/*" style="width: 100%;"></th>';
+                                    echo '<th><input class="form-control" type="text" id="categoria1" name="categoria1" placeholder="Nome da categoria" style="width: 100%;"></th>';
+                                    echo '<th><textarea class="form-control" id="descricao1" name="descricao1" placeholder="Descrição da categoria" rows="2" style="width: 100%;"></textarea></th>';
                                     ?>
-                                        <th>
-                                            <select class="form-select" name="categoria2" style="width: 210px; margin: auto;">
-                                                    <option value="vazio">Selecione a categoria</option>
-                                                    <?php
-                                                    $sql="select * from titulos where dropdown='sim'";
-                                                    /*$st=$liga->prepare($sql);
-                                                    $st->execute();
-                                                    $st->bind_result($id,$nome,$tipo);
-                                                    
-                                                    while ($st->fetch()) {
-                                                    echo '<option value="'. $id . '">' .$nome. '</option>';
-                                            */
-                                                    $st=$ms->query($sql);
-                                                    while ($linha=$st->fetch_array()) {
-                                                    echo '<option value="'. $linha["nome"] . '">' .$linha["nome"]. '</option>';
-                                                }
-                                                
-                                                $st->close();
-                                                
-                                                ?>
-                                            </select>
-                                        </th>
                                     <?php
                                     echo '<th colspan="2"><input class="btn button" type="submit" id="inserir" name="inserir" value="Inserir" style="width: -webkit-fill-available;">';
                                     echo '</form>';
@@ -238,31 +180,16 @@
                                         <form method="POST" enctype="multipart/form-data" name="lista<?php echo $v ?>">
                                         <?php
                                         echo '<input type="hidden" id="id" name="id" value="'.$row["id"].'">';
+                                        echo '<input type="hidden" id="nome_antigo" name="nome_antigo" value="'.$row["nome"].'">';
+                                        echo '<th><input class="form-control" type="file" id="foto" name="foto" accept="image/*" style="width: 100%;">';
+                                        if(!empty($row["imagem"])){
+                                            echo '<small>Atual: '.basename($row["imagem"]).'</small>';
+                                        }
+                                        echo '</th>';
                                         echo '<th><input class="form-control" type="text" id="categoria3" name="categoria3" value="'.$row["nome"].'" style="width: 100%;"></th>';
-                                        ?>
-                                            <th>
-                                                <select class="form-select" name="categoria4" style="width: 210px; margin: auto;">
-                                                        <option value="<?php echo $row["correspondente"]; ?>">Selecione a categoria</option>
-                                                        <?php
-                                                        $sql="select * from titulos where dropdown='sim'";
-                                                        /*$st=$liga->prepare($sql);
-                                                        $st->execute();
-                                                        $st->bind_result($id,$nome,$tipo);
-                                                        
-                                                        while ($st->fetch()) {
-                                                        echo '<option value="'. $id . '">' .$nome. '</option>';
-                                                */
-                                                        $st=$ms->query($sql);
-                                                        while ($linha=$st->fetch_array()) {
-                                                        echo '<option value="'. $linha["nome"] . '">' .$linha["nome"]. '</option>';
-                                                    }
-                                                    
-                                                    $st->close(); 
-                                                    
-                                                    ?>
-                                                </select>
-                                        </th>
-                                        <?php
+                                        $descricao = isset($row["descricao"]) ? $row["descricao"] : '';
+                                        echo '<th><textarea class="form-control" id="descricao3" name="descricao3" rows="2" style="width: 100%;">'.$descricao.'</textarea></th>';
+                                        echo '<th><input class="btn button" type="submit" id="alterar" name="alterar" value="Alterar" style="width: -webkit-fill-available;">';
                                         echo '<th><input class="btn button" type="submit" id="eliminar" name="eliminar" value="Eliminar" style="width: -webkit-fill-available;">';
                                         ?>
                                         </form>

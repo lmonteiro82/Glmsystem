@@ -155,8 +155,7 @@
 
                             <div>
                                 <!-- Pôr botão aqui -->
-                                <a class="btn button" href="alterar_titulos.php" id="alterar_titulos">Alterar Titulos</a>
-                                <a class="btn button" href="alterar_categorias.php" id="alterar_categorias">Alterar Categorias</a>
+                                <a class="btn button" href="alterar_categorias.php" id="alterar_categorias">Gerir Categorias</a>
                             </div>
 
                         </div>

@@ -117,7 +117,7 @@
                         <li class="list-body">
                             <p class="py-2">Envie-nos mensagem e receberá uma resposta em 24 horas.</p>
                             <a class="py-2" href="mailto: geral@glmsystem.com">geral@glmsystem.com</a>
-                            <p class="py-2">(+351) 915376464</p>
+                            <p class="py-2">(+351) 966702326</p>
                             <p class="py-2">(Chamada para a rede móvel nacional)</p>
                         </li>
                     </ul> 
