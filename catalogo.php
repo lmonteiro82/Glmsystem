@@ -14,6 +14,16 @@
             padding: 15px 0;
             transition: all 0.3s;
         }
+        .navbar .container {
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        @media (max-width: 767px) {
+            .navbar .container {
+                padding-left: 20px;
+                padding-right: 20px;
+            }
+        }
         .navbar-brand {
             font-size: 24px;
         }
@@ -57,13 +67,10 @@
                     <a class="nav-link" href="index.php">Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php#about">Sobre</a>
+                    <a class="nav-link" href="contacto.php">Contacto</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="index.php#service">Serviços</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="index.php#contact">Contacto</a>
+                    <a class="nav-link" href="https://ajax.systems/pt/tools/configurator/glmsystem/">Configurador</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link active" href="catalogo.php">Catálogo Online</a>
@@ -109,9 +116,31 @@
         }
         .category-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 24px;
-            padding: 20px 0;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        @media (max-width: 1200px) {
+            .category-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 900px) {
+            .category-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 600px) {
+            .category-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        .category-grid form {
+            margin: 0 !important;
+            padding: 0;
+            display: contents;
         }
         .category-card {
             background: white;
@@ -122,7 +151,9 @@
             cursor: pointer;
             border: none;
             text-decoration: none;
-            display: block;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
         .category-card:hover {
             transform: translateY(-4px);
@@ -130,11 +161,15 @@
         }
         .category-card img {
             width: 100%;
-            height: 200px;
+            height: 220px;
             object-fit: cover;
+            display: block;
         }
         .category-card-body {
             padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
         }
         .category-card h3 {
             font-size: 18px;
@@ -145,6 +180,7 @@
         .category-card p {
             font-size: 14px;
             color: #666;
+            margin: 0;
             margin: 0;
             line-height: 1.5;
         }
@@ -176,7 +212,48 @@
             border: none;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             transition: all 0.3s;
+            height: 100%;
         }
+        
+        /* Layout horizontal para mobile */
+        @media (max-width: 767px) {
+            .cards {
+                display: flex;
+                flex-direction: row;
+                height: auto;
+            }
+            .cards .card-img-top {
+                width: 120px;
+                height: 120px;
+                object-fit: cover;
+                border-radius: 12px 0 0 12px;
+                flex-shrink: 0;
+            }
+            .cards .card-body {
+                flex: 1;
+                padding: 12px;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-between;
+            }
+            .cards .card-title {
+                font-size: 16px;
+                margin-bottom: 8px;
+            }
+            .cards .card-text {
+                font-size: 13px;
+                margin-bottom: 10px;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }
+            .cards .btn-primary {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+        }
+        
         .cards:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.12);
@@ -207,7 +284,7 @@
                 <h2><?php echo htmlspecialchars($_POST["bbb"]); ?></h2>
             </div>
 
-            <div id="div_controladoras" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
+            <div id="div_controladoras" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
                 <?php
                 $sq = "select * from produtos";
                 $results = $ms->query($sq);

@@ -55,6 +55,24 @@
         href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
     />
 
+    <style>
+        /* Estilo para o botão Catálogo Online */
+        .navbar .btn-catalogo {
+            background: #9E3223 !important;
+            color: white !important;
+            padding: 8px 20px !important;
+            border-radius: 6px !important;
+            font-weight: 500 !important;
+            transition: all 0.3s !important;
+            border: none !important;
+        }
+        .navbar .btn-catalogo:hover {
+            background: #7d1001 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(158, 50, 35, 0.3);
+        }
+    </style>
+
 </head>
 <body data-spy="scroll" data-target=".navbar" data-offset="40" id="inicio">
 
@@ -80,7 +98,7 @@
                         <a class="nav-link" href="https://ajax.systems/pt/tools/configurator/glmsystem/">Configurador</a>
                     </li>
                     <li class="nav-item ml-0 ml-lg-4">
-                        <a class="nav-link btn btn-primary" href="catalogo.php" style="color: #ffffff;">Catálogo Online</a>
+                        <a class="nav-link btn btn-catalogo" href="catalogo.php">Catálogo Online</a>
                     </li>
                 </ul>
             </div>
