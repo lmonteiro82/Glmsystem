@@ -274,8 +274,63 @@
         </div>
 
         <?php
-        if (isset($_POST["bbb"])) {
-            // Mostra produtos da categoria selecionada
+        if (isset($_POST["produto_categoria"]) || isset($_POST["produto_subcategoria"])) {
+            // Mostra produtos da categoria ou subcategoria selecionada
+            $titulo = isset($_POST["produto_subcategoria"]) ? $_POST["produto_subcategoria"] : $_POST["produto_categoria"];
+            $categoria_pai = isset($_POST["categoria_pai"]) ? $_POST["categoria_pai"] : "";
+            ?>
+            <div class="products-header">
+                <form method="post" style="margin: 0;">
+                    <?php if(isset($_POST["produto_subcategoria"])) { ?>
+                        <input type="hidden" name="bbb" value="<?php echo htmlspecialchars($categoria_pai); ?>">
+                        <button type="submit" class="back-button">← Voltar às Subcategorias</button>
+                    <?php } else { ?>
+                        <button type="submit" class="back-button">← Voltar às Categorias</button>
+                    <?php } ?>
+                </form>
+                <h2><?php echo htmlspecialchars($titulo); ?></h2>
+            </div>
+
+            <div id="div_controladoras" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                <?php
+                if(isset($_POST["produto_subcategoria"])) {
+                    $sq = "select * from produtos where subcategoria_id = ?";
+                    $stmt = $ms->prepare($sq);
+                    $stmt->bind_param('i', $_POST["subcategoria_id"]);
+                    $stmt->execute();
+                    $results = $stmt->get_result();
+                } else {
+                    $sq = "select * from produtos where categoria = ?";
+                    $stmt = $ms->prepare($sq);
+                    $stmt->bind_param('s', $_POST["produto_categoria"]);
+                    $stmt->execute();
+                    $results = $stmt->get_result();
+                }
+                
+                while($row = $results->fetch_array()) { ?>
+                        <div class="col searchable-item" data-name="<?php echo strtolower($row["nome"]); ?>">
+                            <div class="card cards">
+                                <img src="backoffice/page/<?php echo $row["imagem"] ?>" class="card-img-top" alt="<?php echo htmlspecialchars($row["nome"]); ?>">
+                                <div class="card-body">
+                                    <h5 class="card-title"><?php echo $row["nome"] ?></h5>
+                                    <p class="card-text"><?php echo $row["texto"] ?></p>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                                        <a href="<?php echo $row["link"] ?>" class="btn btn-primary" target="_blank">Ver Mais</a>
+                                        <?php if(!empty($row["preco"])) { ?>
+                                            <h4 style="margin: 0; color: #9E3223; font-weight: 600;"><?php echo $row["preco"] ?>€</h4>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php
+                }
+                if(isset($stmt)) $stmt->close();
+                ?>
+            </div>
+            <?php
+        } elseif (isset($_POST["bbb"])) {
+            // Mostra subcategorias da categoria selecionada
             ?>
             <div class="products-header">
                 <form method="post" style="margin: 0;">
@@ -284,12 +339,60 @@
                 <h2><?php echo htmlspecialchars($_POST["bbb"]); ?></h2>
             </div>
 
-            <div id="div_controladoras" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+            <div class="category-grid" id="subcategoryGrid">
                 <?php
-                $sq = "select * from produtos";
-                $results = $ms->query($sq);
-                while($row = $results->fetch_array()) {
-                    if ($row["categoria"] == $_POST["bbb"]) { ?>
+                // Debug: verificar categoria
+                echo "<!-- Buscando subcategorias para: " . htmlspecialchars($_POST["bbb"]) . " -->";
+                
+                $sq = "SELECT s.*, c.id as cat_id, c.nome as cat_nome FROM subcategorias s INNER JOIN categorias c ON s.categoria_id = c.id WHERE c.nome = ? ORDER BY s.nome";
+                $stmt = $ms->prepare($sq);
+                $stmt->bind_param('s', $_POST["bbb"]);
+                $stmt->execute();
+                $results = $stmt->get_result();
+                $temSubcategorias = false;
+                
+                // Debug: contar resultados
+                echo "<!-- Subcategorias encontradas: " . $results->num_rows . " -->";
+                
+                if($results && $results->num_rows > 0){
+                    while($row = $results->fetch_array()) { 
+                        $temSubcategorias = true;
+                        $imagemSubcategoria = (isset($row["imagem"]) && !empty($row["imagem"])) ? "backoffice/page/" . $row["imagem"] : "https://via.placeholder.com/400x200/e0e0e0/666666?text=" . urlencode($row["nome"]);
+                        $descricao = isset($row["descricao"]) ? $row["descricao"] : "Explore os produtos desta subcategoria.";
+                        ?>
+                        <form method="post" style="margin: 0;">
+                            <input type="hidden" name="subcategoria_id" value="<?php echo $row["id"]; ?>">
+                            <input type="hidden" name="categoria_pai" value="<?php echo htmlspecialchars($_POST["bbb"]); ?>">
+                            <button type="submit" name="produto_subcategoria" value="<?php echo $row["nome"] ?>" class="category-card searchable-item" data-name="<?php echo strtolower($row["nome"]); ?>">
+                                <img src="<?php echo $imagemSubcategoria; ?>" alt="<?php echo htmlspecialchars($row["nome"]); ?>" onerror="this.src='https://via.placeholder.com/400x200/e0e0e0/666666?text=<?php echo urlencode($row["nome"]); ?>'">
+                                <div class="category-card-body">
+                                    <h3><?php echo $row["nome"] ?></h3>
+                                    <p><?php echo $descricao ?></p>
+                                </div>
+                            </button>
+                        </form>
+                        <?php
+                    }
+                }
+                $stmt->close();
+                
+                if(!$temSubcategorias) {
+                    // Se não houver subcategorias, mostrar produtos diretamente
+                    ?>
+                    <div style="grid-column: 1/-1;">
+                        <p style="text-align: center; color: #666; margin-bottom: 20px;">Esta categoria não tem subcategorias. Mostrando produtos:</p>
+                    </div>
+                    <?php
+                    echo '</div>';
+                    echo '<div id="div_controladoras" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" style="margin-top: 20px;">';
+                    
+                    $sq = "select * from produtos where categoria = ?";
+                    $stmt = $ms->prepare($sq);
+                    $stmt->bind_param('s', $_POST["bbb"]);
+                    $stmt->execute();
+                    $results = $stmt->get_result();
+                    
+                    while($row = $results->fetch_array()) { ?>
                         <div class="col searchable-item" data-name="<?php echo strtolower($row["nome"]); ?>">
                             <div class="card cards">
                                 <img src="backoffice/page/<?php echo $row["imagem"] ?>" class="card-img-top" alt="<?php echo htmlspecialchars($row["nome"]); ?>">
@@ -307,9 +410,12 @@
                         </div>
                         <?php
                     }
+                    $stmt->close();
+                    echo '</div>';
+                } else {
+                    echo '</div>';
                 }
                 ?>
-            </div>
             <?php
         } else {
             // Mostra categorias como cards

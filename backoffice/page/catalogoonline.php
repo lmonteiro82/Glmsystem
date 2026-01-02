@@ -34,29 +34,33 @@
                     $destino = "fotos/a" . uniqid() . $extensao;
                     if(move_uploaded_file($_FILES['foto']['tmp_name'], $destino)) {
                         // Atualizar COM nova imagem
-                        $qr = "update produtos set imagem=?, nome=?, preco=?, texto=?, link=?, categoria=? where id=?";
+                        $qr = "update produtos set imagem=?, nome=?, preco=?, texto=?, link=?, categoria=?, subcategoria_id=? where id=?";
                         $ordem = $ms->prepare($qr);
-                        $ordem->bind_param('ssisssi', $destino, $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $_POST["id"]);
+                        $subcategoria_val = !empty($_POST["subcategoria1"]) ? $_POST["subcategoria1"] : null;
+                        $ordem->bind_param('ssisssii', $destino, $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $subcategoria_val, $_POST["id"]);
                     } else {
                         // Se falhar o upload, atualizar sem imagem
-                        $qr = "update produtos set nome=?, preco=?, texto=?, link=?, categoria=? where id=?";
+                        $qr = "update produtos set nome=?, preco=?, texto=?, link=?, categoria=?, subcategoria_id=? where id=?";
                         $ordem = $ms->prepare($qr);
-                        $ordem->bind_param('sisssi', $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $_POST["id"]);
+                        $subcategoria_val = !empty($_POST["subcategoria1"]) ? $_POST["subcategoria1"] : null;
+                        $ordem->bind_param('sisssii', $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $subcategoria_val, $_POST["id"]);
                         $msg='<h3 class="erro">Erro ao fazer upload da imagem!</h3>';
                     }
                 } else {
                     // Formato não suportado
-                    $qr = "update produtos set nome=?, preco=?, texto=?, link=?, categoria=? where id=?";
+                    $qr = "update produtos set nome=?, preco=?, texto=?, link=?, categoria=?, subcategoria_id=? where id=?";
                     $ordem = $ms->prepare($qr);
-                    $ordem->bind_param('sisssi', $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $_POST["id"]);
+                    $subcategoria_val = !empty($_POST["subcategoria1"]) ? $_POST["subcategoria1"] : null;
+                    $ordem->bind_param('sisssii', $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $subcategoria_val, $_POST["id"]);
                     $msg='<h3 class="erro">Formato não suportado. Use JPG, PNG, GIF ou WEBP</h3>';
                 }
             }
             else{
                 // Sem nova imagem, atualizar apenas os outros campos
-                $qr = "update produtos set nome=?, preco=?, texto=?, link=?, categoria=? where id=?";
+                $qr = "update produtos set nome=?, preco=?, texto=?, link=?, categoria=?, subcategoria_id=? where id=?";
                 $ordem = $ms->prepare($qr);
-                $ordem->bind_param('sisssi', $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $_POST["id"]);
+                $subcategoria_val = !empty($_POST["subcategoria1"]) ? $_POST["subcategoria1"] : null;
+                $ordem->bind_param('sisssii', $_POST["nome1"], $_POST["preco1"], $_POST["texto1"], $_POST["link1"], $_POST["categoria1"], $subcategoria_val, $_POST["id"]);
             }
             
             if ($ordem->execute()){
@@ -115,10 +119,10 @@
             
             if($row = $result->fetch_array()){
                 // Inserir cópia do produto
-                $qr = "INSERT INTO produtos(imagem,nome,preco,texto,link,categoria) VALUES(?,?,?,?,?,?)";
+                $qr = "INSERT INTO produtos(imagem,nome,preco,texto,link,categoria,subcategoria_id) VALUES(?,?,?,?,?,?,?)";
                 $ordem2 = $ms->prepare($qr);
                 $nomeCopia = $row["nome"] . " (Cópia)";
-                $ordem2->bind_param('ssisss', $row["imagem"], $nomeCopia, $row["preco"], $row["texto"], $row["link"], $row["categoria"]);
+                $ordem2->bind_param('ssisssi', $row["imagem"], $nomeCopia, $row["preco"], $row["texto"], $row["link"], $row["categoria"], $row["subcategoria_id"]);
                 
                 if ($ordem2->execute() && $ordem2->affected_rows>0){
                     $msg='<h3 class="sucesso">Produto duplicado com sucesso!</h3>';
@@ -183,11 +187,11 @@
 				
 			// Inserir produto (com ou sem imagem)
 			if(!isset($msg) || $destino != ""){
-				$qr = "INSERT INTO produtos(imagem,nome,preco,texto,link,categoria) VALUES(?,?,?,?,?,?)";		
+				$qr = "INSERT INTO produtos(imagem,nome,preco,texto,link,categoria,subcategoria_id) VALUES(?,?,?,?,?,?,?)";		
 				
 				$ordem = $ms->prepare($qr);
-				
-				$ordem->bind_param('ssisss', $destino, $_POST["inserir2"], $_POST["inserir3"], $_POST["inserir6"], $_POST["inserir4"], $_POST["inserir5"]);
+				$subcategoria_insert = !empty($_POST["inserir7"]) ? $_POST["inserir7"] : null;
+				$ordem->bind_param('ssisssi', $destino, $_POST["inserir2"], $_POST["inserir3"], $_POST["inserir6"], $_POST["inserir4"], $_POST["inserir5"], $subcategoria_insert);
 				
 	
 				// Executar o query (verificar se não dá erro e o número de registos afetados)
@@ -301,6 +305,7 @@
                                     </select>
                                 </form>
                                 <a class="btn button" href="alterar_categorias.php">Gerir Categorias</a>
+                                <a class="btn button" href="alterar_subcategorias.php">Gerir Subcategorias</a>
                             </div>
                         </div>
                         <div class="card-body">
@@ -343,15 +348,21 @@
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label-custom">Categoria *</label>
-                                            <select class="form-select" name="inserir5" required>
+                                            <select class="form-select" name="inserir5" id="categoria_insert" onchange="loadSubcategorias('insert')" required>
                                                 <option value="selecionar">Selecionar</option>
                                                 <?php
                                                 $sq_cat="select * from categorias ORDER BY nome";
                                                 $results_cat = $ms->query($sq_cat);
                                                 while($row_cat = $results_cat->fetch_array()) {
-                                                    echo '<option value="'.$row_cat["nome"].'">'.$row_cat["nome"].'</option>';
+                                                    echo '<option value="'.$row_cat["nome"].'" data-id="'.$row_cat["id"].'">'.$row_cat["nome"].'</option>';
                                                 }
                                                 ?>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label-custom">Subcategoria (opcional)</label>
+                                            <select class="form-select" name="inserir7" id="subcategoria_insert">
+                                                <option value="">Nenhuma</option>
                                             </select>
                                         </div>
                                         <div class="col-md-12 mb-3">
@@ -400,16 +411,33 @@
                                                     
                                                     <div class="col-md-6">
                                                         <label class="form-label-custom">Categoria</label>
-                                                        <select class="form-select" name="categoria1">
-                                                            <option value="<?php echo $row["categoria"]; ?>" selected><?php echo $row["categoria"]; ?></option>
+                                                        <select class="form-select" name="categoria1" id="categoria_edit_<?php echo $row["id"]; ?>" onchange="loadSubcategorias('edit_<?php echo $row["id"]; ?>')">
                                                             <?php
                                                             $qs="select * from categorias ORDER BY nome";
                                                             $result_cat = $ms->query($qs);
                                                             while($rowCat = $result_cat->fetch_array()) {
-                                                                if($rowCat["nome"] != $row["categoria"]) {
-                                                                    echo '<option value="'.$rowCat["nome"].'">'.$rowCat["nome"].'</option>';
-                                                                }
+                                                                $selected = ($rowCat["nome"] == $row["categoria"]) ? 'selected' : '';
+                                                                echo '<option value="'.$rowCat["nome"].'" data-id="'.$rowCat["id"].'" '.$selected.'>'.$rowCat["nome"].'</option>';
                                                             }
+                                                            ?>
+                                                        </select>
+                                                    </div>
+                                                    
+                                                    <div class="col-md-6">
+                                                        <label class="form-label-custom">Subcategoria (opcional)</label>
+                                                        <select class="form-select" name="subcategoria1" id="subcategoria_edit_<?php echo $row["id"]; ?>">
+                                                            <option value="">Nenhuma</option>
+                                                            <?php
+                                                            $qs_sub="SELECT s.* FROM subcategorias s INNER JOIN categorias c ON s.categoria_id = c.id WHERE c.nome = ?";
+                                                            $stmt_sub = $ms->prepare($qs_sub);
+                                                            $stmt_sub->bind_param('s', $row["categoria"]);
+                                                            $stmt_sub->execute();
+                                                            $result_sub = $stmt_sub->get_result();
+                                                            while($rowSub = $result_sub->fetch_array()) {
+                                                                $selected_sub = ($rowSub["id"] == $row["subcategoria_id"]) ? 'selected' : '';
+                                                                echo '<option value="'.$rowSub["id"].'" '.$selected_sub.'>'.$rowSub["nome"].'</option>';
+                                                            }
+                                                            $stmt_sub->close();
                                                             ?>
                                                         </select>
                                                     </div>
@@ -473,5 +501,35 @@
     <a class="scroll-to-top rounded" href="#page-top">
         <i class="fas fa-angle-up"></i>
     </a>
+
+    <script>
+    function loadSubcategorias(tipo) {
+        const categoriaSelect = document.getElementById('categoria_' + tipo);
+        const subcategoriaSelect = document.getElementById('subcategoria_' + tipo);
+        
+        if (!categoriaSelect || !subcategoriaSelect) return;
+        
+        const selectedOption = categoriaSelect.options[categoriaSelect.selectedIndex];
+        const categoriaId = selectedOption.getAttribute('data-id');
+        
+        // Limpar subcategorias
+        subcategoriaSelect.innerHTML = '<option value="">Nenhuma</option>';
+        
+        if (!categoriaId || categoriaId === '') return;
+        
+        // Buscar subcategorias via AJAX
+        fetch('get_subcategorias.php?categoria_id=' + categoriaId)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.id;
+                    option.textContent = sub.nome;
+                    subcategoriaSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar subcategorias:', error));
+    }
+    </script>
 
     <?php include ("footer.php"); ?>
