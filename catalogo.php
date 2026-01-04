@@ -294,13 +294,13 @@
             <div id="div_controladoras" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
                 <?php
                 if(isset($_POST["produto_subcategoria"])) {
-                    $sq = "select * from produtos where subcategoria_id = ?";
+                    $sq = "select * from produtos where subcategoria_id = ? ORDER BY ordem_exibicao ASC, id ASC";
                     $stmt = $ms->prepare($sq);
                     $stmt->bind_param('i', $_POST["subcategoria_id"]);
                     $stmt->execute();
                     $results = $stmt->get_result();
                 } else {
-                    $sq = "select * from produtos where categoria = ?";
+                    $sq = "select * from produtos where categoria = ? ORDER BY ordem_exibicao ASC, id ASC";
                     $stmt = $ms->prepare($sq);
                     $stmt->bind_param('s', $_POST["produto_categoria"]);
                     $stmt->execute();
@@ -386,7 +386,7 @@
                     echo '</div>';
                     echo '<div id="div_controladoras" class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4" style="margin-top: 20px;">';
                     
-                    $sq = "select * from produtos where categoria = ?";
+                    $sq = "select * from produtos where categoria = ? ORDER BY ordem_exibicao ASC, id ASC";
                     $stmt = $ms->prepare($sq);
                     $stmt->bind_param('s', $_POST["bbb"]);
                     $stmt->execute();

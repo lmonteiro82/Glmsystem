@@ -7,6 +7,108 @@
 <?php
     include ("../../bd.php");
 
+    // Mover produto para cima
+    if (isset($_POST['mover_cima'])) {
+        $produto_id = $_POST['produto_id'];
+        $categoria = $_POST['categoria_atual'];
+        $subcategoria_id = !empty($_POST['subcategoria_atual']) ? $_POST['subcategoria_atual'] : null;
+        
+        // Buscar ordem atual do produto
+        $qr = "SELECT ordem_exibicao FROM produtos WHERE id = ?";
+        $stmt = $ms->prepare($qr);
+        $stmt->bind_param('i', $produto_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $produto = $result->fetch_array();
+        $ordem_atual = $produto['ordem_exibicao'];
+        $stmt->close();
+        
+        // Buscar produto anterior (com ordem menor)
+        if($subcategoria_id) {
+            $qr = "SELECT id, ordem_exibicao FROM produtos WHERE subcategoria_id = ? AND ordem_exibicao < ? ORDER BY ordem_exibicao DESC LIMIT 1";
+            $stmt = $ms->prepare($qr);
+            $stmt->bind_param('ii', $subcategoria_id, $ordem_atual);
+        } else {
+            $qr = "SELECT id, ordem_exibicao FROM produtos WHERE categoria = ? AND (subcategoria_id IS NULL OR subcategoria_id = 0) AND ordem_exibicao < ? ORDER BY ordem_exibicao DESC LIMIT 1";
+            $stmt = $ms->prepare($qr);
+            $stmt->bind_param('si', $categoria, $ordem_atual);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if($produto_anterior = $result->fetch_array()) {
+            // Trocar ordens
+            $ordem_anterior = $produto_anterior['ordem_exibicao'];
+            $id_anterior = $produto_anterior['id'];
+            
+            $qr1 = "UPDATE produtos SET ordem_exibicao = ? WHERE id = ?";
+            $stmt1 = $ms->prepare($qr1);
+            $stmt1->bind_param('ii', $ordem_anterior, $produto_id);
+            $stmt1->execute();
+            $stmt1->close();
+            
+            $qr2 = "UPDATE produtos SET ordem_exibicao = ? WHERE id = ?";
+            $stmt2 = $ms->prepare($qr2);
+            $stmt2->bind_param('ii', $ordem_atual, $id_anterior);
+            $stmt2->execute();
+            $stmt2->close();
+            
+            $msg='<h3 class="sucesso">Ordem alterada com sucesso!</h3>';
+        }
+        $stmt->close();
+    }
+    
+    // Mover produto para baixo
+    if (isset($_POST['mover_baixo'])) {
+        $produto_id = $_POST['produto_id'];
+        $categoria = $_POST['categoria_atual'];
+        $subcategoria_id = !empty($_POST['subcategoria_atual']) ? $_POST['subcategoria_atual'] : null;
+        
+        // Buscar ordem atual do produto
+        $qr = "SELECT ordem_exibicao FROM produtos WHERE id = ?";
+        $stmt = $ms->prepare($qr);
+        $stmt->bind_param('i', $produto_id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $produto = $result->fetch_array();
+        $ordem_atual = $produto['ordem_exibicao'];
+        $stmt->close();
+        
+        // Buscar produto seguinte (com ordem maior)
+        if($subcategoria_id) {
+            $qr = "SELECT id, ordem_exibicao FROM produtos WHERE subcategoria_id = ? AND ordem_exibicao > ? ORDER BY ordem_exibicao ASC LIMIT 1";
+            $stmt = $ms->prepare($qr);
+            $stmt->bind_param('ii', $subcategoria_id, $ordem_atual);
+        } else {
+            $qr = "SELECT id, ordem_exibicao FROM produtos WHERE categoria = ? AND (subcategoria_id IS NULL OR subcategoria_id = 0) AND ordem_exibicao > ? ORDER BY ordem_exibicao ASC LIMIT 1";
+            $stmt = $ms->prepare($qr);
+            $stmt->bind_param('si', $categoria, $ordem_atual);
+        }
+        $stmt->execute();
+        $result = $stmt->get_result();
+        
+        if($produto_seguinte = $result->fetch_array()) {
+            // Trocar ordens
+            $ordem_seguinte = $produto_seguinte['ordem_exibicao'];
+            $id_seguinte = $produto_seguinte['id'];
+            
+            $qr1 = "UPDATE produtos SET ordem_exibicao = ? WHERE id = ?";
+            $stmt1 = $ms->prepare($qr1);
+            $stmt1->bind_param('ii', $ordem_seguinte, $produto_id);
+            $stmt1->execute();
+            $stmt1->close();
+            
+            $qr2 = "UPDATE produtos SET ordem_exibicao = ? WHERE id = ?";
+            $stmt2 = $ms->prepare($qr2);
+            $stmt2->bind_param('ii', $ordem_atual, $id_seguinte);
+            $stmt2->execute();
+            $stmt2->close();
+            
+            $msg='<h3 class="sucesso">Ordem alterada com sucesso!</h3>';
+        }
+        $stmt->close();
+    }
+
     if (isset($_POST['alterar']))
     {
         if($_POST['nome1']=='' && $_POST['preco1']=='' && $_POST['texto1']=='' && $_POST['link1']=='' && $_POST['categoria1']==''){
@@ -187,17 +289,92 @@
 				
 			// Inserir produto (com ou sem imagem)
 			if(!isset($msg) || $destino != ""){
-				$qr = "INSERT INTO produtos(imagem,nome,preco,texto,link,categoria,subcategoria_id) VALUES(?,?,?,?,?,?,?)";		
+				// Determinar ordem de exibição
+				$ordem_exibicao = 0;
+				$subcategoria_insert = !empty($_POST["inserir7"]) ? $_POST["inserir7"] : null;
+				
+				if(!empty($_POST["inserir8"]) && is_numeric($_POST["inserir8"])){
+					// Se o usuário especificou uma posição relativa (1º, 2º, 3º...)
+					$posicao_desejada = intval($_POST["inserir8"]);
+					
+					// Buscar os produtos existentes ordenados para encontrar a ordem_exibicao correta
+					if($subcategoria_insert) {
+						$qr_lista = "SELECT ordem_exibicao FROM produtos WHERE subcategoria_id = ? ORDER BY ordem_exibicao ASC";
+						$stmt_lista = $ms->prepare($qr_lista);
+						$stmt_lista->bind_param('i', $subcategoria_insert);
+					} else {
+						$qr_lista = "SELECT ordem_exibicao FROM produtos WHERE categoria = ? AND (subcategoria_id IS NULL OR subcategoria_id = 0) ORDER BY ordem_exibicao ASC";
+						$stmt_lista = $ms->prepare($qr_lista);
+						$stmt_lista->bind_param('s', $_POST["inserir5"]);
+					}
+					$stmt_lista->execute();
+					$result_lista = $stmt_lista->get_result();
+					
+					$produtos_existentes = array();
+					while($row_lista = $result_lista->fetch_array()) {
+						$produtos_existentes[] = $row_lista['ordem_exibicao'];
+					}
+					$stmt_lista->close();
+					
+					// Se a posição desejada é maior que o número de produtos, colocar no final
+					if($posicao_desejada > count($produtos_existentes)) {
+						if(count($produtos_existentes) > 0) {
+							$ordem_exibicao = max($produtos_existentes) + 1;
+						} else {
+							$ordem_exibicao = 1;
+						}
+					} else {
+						// Inserir na posição desejada (índice = posição - 1)
+						$indice = $posicao_desejada - 1;
+						if($indice >= 0 && isset($produtos_existentes[$indice])) {
+							$ordem_exibicao = $produtos_existentes[$indice];
+							
+							// Mover todos os produtos com ordem >= à especificada
+							if($subcategoria_insert) {
+								$qr_ajuste = "UPDATE produtos SET ordem_exibicao = ordem_exibicao + 1 WHERE subcategoria_id = ? AND ordem_exibicao >= ?";
+								$stmt_ajuste = $ms->prepare($qr_ajuste);
+								$stmt_ajuste->bind_param('ii', $subcategoria_insert, $ordem_exibicao);
+							} else {
+								$qr_ajuste = "UPDATE produtos SET ordem_exibicao = ordem_exibicao + 1 WHERE categoria = ? AND (subcategoria_id IS NULL OR subcategoria_id = 0) AND ordem_exibicao >= ?";
+								$stmt_ajuste = $ms->prepare($qr_ajuste);
+								$stmt_ajuste->bind_param('si', $_POST["inserir5"], $ordem_exibicao);
+							}
+							$stmt_ajuste->execute();
+							$stmt_ajuste->close();
+						} else {
+							// Se não houver produtos, começar em 1
+							$ordem_exibicao = 1;
+						}
+					}
+				} else {
+					// Se não especificou ordem, colocar no final
+					if($subcategoria_insert) {
+						$qr_max = "SELECT COALESCE(MAX(ordem_exibicao), 0) + 1 as proxima_ordem FROM produtos WHERE subcategoria_id = ?";
+						$stmt_max = $ms->prepare($qr_max);
+						$stmt_max->bind_param('i', $subcategoria_insert);
+					} else {
+						$qr_max = "SELECT COALESCE(MAX(ordem_exibicao), 0) + 1 as proxima_ordem FROM produtos WHERE categoria = ? AND (subcategoria_id IS NULL OR subcategoria_id = 0)";
+						$stmt_max = $ms->prepare($qr_max);
+						$stmt_max->bind_param('s', $_POST["inserir5"]);
+					}
+					$stmt_max->execute();
+					$result_max = $stmt_max->get_result();
+					$row_max = $result_max->fetch_array();
+					$ordem_exibicao = $row_max['proxima_ordem'];
+					$stmt_max->close();
+				}
+				
+				$qr = "INSERT INTO produtos(imagem,nome,preco,texto,link,categoria,subcategoria_id,ordem_exibicao) VALUES(?,?,?,?,?,?,?,?)";		
 				
 				$ordem = $ms->prepare($qr);
 				$subcategoria_insert = !empty($_POST["inserir7"]) ? $_POST["inserir7"] : null;
-				$ordem->bind_param('ssisssi', $destino, $_POST["inserir2"], $_POST["inserir3"], $_POST["inserir6"], $_POST["inserir4"], $_POST["inserir5"], $subcategoria_insert);
+				$ordem->bind_param('ssisssii', $destino, $_POST["inserir2"], $_POST["inserir3"], $_POST["inserir6"], $_POST["inserir4"], $_POST["inserir5"], $subcategoria_insert, $ordem_exibicao);
 				
 	
 				// Executar o query (verificar se não dá erro e o número de registos afetados)
 				if ($ordem->execute()){
 					if($ordem->affected_rows > 0){
-						$msg='<h3 class="sucesso">O produto foi inserido!</h3>';
+						$msg='<h3 class="sucesso">O produto foi inserido na posição '.$ordem_exibicao.'!</h3>';
 					}
 				}
 				else{
@@ -285,43 +462,65 @@
                         }
                     </style>
 
-                    <!-- Header com filtros -->
+                    <!-- Header -->
                     <div class="card shadow mb-4">
-                        <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                            <h6 class="m-0 font-weight-bold text-primary">Gestão de Produtos</h6>
-                            <div class="d-flex gap-2">
-                                <form name="listagem" id="listagem" method="post" action="" class="me-2">
-                                    <select class="form-select" name="pro" style="width: 210px;" onchange="this.form.submit()">
-                                        <option value="-1">Filtrar por categoria</option>
-                                        <?php
-                                        $sql="select * from categorias ORDER BY nome";
-                                        $st=$ms->query($sql);
-                                        echo '<option value="20">Todas as categorias</option>';
-                                        while ($linha=$st->fetch_array()) {
-                                            echo '<option value="'. $linha["nome"] . '">' .$linha["nome"]. '</option>';
-                                        }
-                                        $st->close(); 
-                                        ?>
-                                    </select>
-                                </form>
-                                <a class="btn button" href="alterar_categorias.php">Gerir Categorias</a>
-                                <a class="btn button" href="alterar_subcategorias.php">Gerir Subcategorias</a>
+                        <div class="card-header py-3">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap">
+                                <h6 class="m-0 font-weight-bold text-primary mb-2 mb-md-0">Gestão de Produtos</h6>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a class="btn button" href="alterar_categorias.php">Gerir Categorias</a>
+                                    <a class="btn button" href="alterar_subcategorias.php">Gerir Subcategorias</a>
+                                </div>
                             </div>
                         </div>
                         <div class="card-body">
                             <?php
-                            if(!empty($_POST["pro"])){
-                                if($_POST["pro"]=="20") $d="";
-                                else $d="where categoria='".$_POST["pro"]."'";
+                            // Construir filtro baseado em categoria e subcategoria
+                            $filtros = array();
+                            $tipos = array();
+                            $valores = array();
+                            $mostrarProdutos = false;
+                            
+                            // Verificar se algum filtro foi selecionado
+                            if(!empty($_POST["pro"]) && $_POST["pro"] != "-1"){
+                                $mostrarProdutos = true;
+                                
+                                if($_POST["pro"] != "20"){
+                                    $filtros[] = "categoria = ?";
+                                    $tipos[] = 's';
+                                    $valores[] = $_POST["pro"];
+                                }
                             }
-                            else $d="";
                             
-                            $sq='select * from produtos '.$d.' ORDER BY id DESC';
-                            $results = $ms->query($sq);
+                            if(!empty($_POST["subcat"]) && $_POST["subcat"] != "-1" && $_POST["subcat"] != "20"){
+                                $filtros[] = "subcategoria_id = ?";
+                                $tipos[] = 'i';
+                                $valores[] = $_POST["subcat"];
+                            }
                             
-                            if(!$results) {
-                                echo '<div class="alert alert-danger">Erro ao carregar produtos: ' . $ms->error . '</div>';
-                                $results = $ms->query('select * from produtos ORDER BY id DESC');
+                            $results = null;
+                            
+                            if($mostrarProdutos){
+                                $where = "";
+                                if(count($filtros) > 0){
+                                    $where = "WHERE " . implode(" AND ", $filtros);
+                                }
+                                
+                                $sq = 'SELECT * FROM produtos '.$where.' ORDER BY ordem_exibicao ASC, id ASC';
+                                
+                                if(count($valores) > 0){
+                                    $stmt_filter = $ms->prepare($sq);
+                                    $tipos_str = implode('', $tipos);
+                                    $stmt_filter->bind_param($tipos_str, ...$valores);
+                                    $stmt_filter->execute();
+                                    $results = $stmt_filter->get_result();
+                                } else {
+                                    $results = $ms->query($sq);
+                                }
+                                
+                                if(!$results) {
+                                    echo '<div class="alert alert-danger">Erro ao carregar produtos: ' . $ms->error . '</div>';
+                                }
                             }
                             ?>
                             
@@ -329,6 +528,9 @@
                             <div class="product-card insert-card">
                                 <h5 class="mb-3"><i class="fas fa-plus-circle"></i> Adicionar Novo Produto</h5>
                                 <form method="POST" enctype="multipart/form-data">
+                                    <!-- Preservar filtros após inserção -->
+                                    <input type="hidden" name="pro" value="<?php echo $_POST['pro'] ?? ''; ?>">
+                                    <input type="hidden" name="subcat" value="<?php echo $_POST['subcat'] ?? ''; ?>">
                                     <div class="row">
                                         <div class="col-md-6 mb-3">
                                             <label class="form-label-custom">Imagem *</label>
@@ -365,6 +567,11 @@
                                                 <option value="">Nenhuma</option>
                                             </select>
                                         </div>
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label-custom">Posição (opcional)</label>
+                                            <input class="form-control" type="number" name="inserir8" placeholder="Ex: 1, 2, 3..." min="1" title="Deixe vazio para adicionar no final">
+                                            <small class="text-muted">Deixe vazio para adicionar no final</small>
+                                        </div>
                                         <div class="col-md-12 mb-3">
                                             <label class="form-label-custom">Descrição</label>
                                             <textarea class="form-control" name="inserir6" rows="2" placeholder="Descrição do produto"></textarea>
@@ -378,15 +585,79 @@
                                 </form>
                             </div>
 
+                            <!-- Filtros de Produtos -->
+                            <div class="card" style="background: #f8f9fa; border: 2px solid #6c757d; margin-bottom: 20px;">
+                                <div class="card-body">
+                                    <h5 class="mb-3" style="color: #495057;"><i class="fas fa-filter"></i> Filtrar Produtos Existentes</h5>
+                                    <form name="listagem" id="listagem" method="post" action="" class="d-flex gap-2 flex-wrap align-items-end">
+                                        <div>
+                                            <label class="form-label-custom" style="color: #495057;">Categoria</label>
+                                            <select class="form-select" name="pro" id="filtro_categoria" style="width: 210px;" onchange="loadSubcategoriasFilter()">
+                                                <option value="-1">Todas</option>
+                                                <?php
+                                                $sql="select * from categorias ORDER BY nome";
+                                                $st=$ms->query($sql);
+                                                while ($linha=$st->fetch_array()) {
+                                                    $selected = (!empty($_POST["pro"]) && $_POST["pro"] == $linha["nome"]) ? 'selected' : '';
+                                                    echo '<option value="'. $linha["nome"] . '" data-id="'.$linha["id"].'" '.$selected.'>' .$linha["nome"]. '</option>';
+                                                }
+                                                $st->close(); 
+                                                ?>
+                                            </select>
+                                        </div>
+                                        
+                                        <div>
+                                            <label class="form-label-custom" style="color: #495057;">Subcategoria</label>
+                                            <select class="form-select" name="subcat" id="filtro_subcategoria" style="width: 210px;">
+                                                <option value="-1">Todas</option>
+                                                <?php
+                                                if(!empty($_POST["pro"]) && $_POST["pro"] != "20" && $_POST["pro"] != "-1"){
+                                                    $sql_sub="SELECT s.* FROM subcategorias s INNER JOIN categorias c ON s.categoria_id = c.id WHERE c.nome = ? ORDER BY s.nome";
+                                                    $st_sub = $ms->prepare($sql_sub);
+                                                    $st_sub->bind_param('s', $_POST["pro"]);
+                                                    $st_sub->execute();
+                                                    $result_sub = $st_sub->get_result();
+                                                    while ($linha_sub = $result_sub->fetch_array()) {
+                                                        $selected_sub = (!empty($_POST["subcat"]) && $_POST["subcat"] == $linha_sub["id"]) ? 'selected' : '';
+                                                        echo '<option value="'. $linha_sub["id"] . '" '.$selected_sub.'>' .$linha_sub["nome"]. '</option>';
+                                                    }
+                                                    $st_sub->close();
+                                                }
+                                                ?>
+                                            </select>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn button"><i class="fas fa-search"></i> Filtrar</button>
+                                        <?php if(!empty($_POST["pro"]) || !empty($_POST["subcat"])) { ?>
+                                            <a href="catalogoonline.php" class="btn btn-secondary"><i class="fas fa-times"></i> Limpar</a>
+                                        <?php } ?>
+                                    </form>
+                                </div>
+                            </div>
+
                             <!-- Grid de Produtos Existentes -->
                             <div class="product-grid">
                                 <?php
-                                while($row = $results->fetch_array()) {
-                                    $imagemPath = !empty($row["imagem"]) ? $row["imagem"] : "https://via.placeholder.com/150?text=Sem+Imagem";
-                                ?>
+                                if(!$mostrarProdutos){
+                                    // Mensagem quando nenhum filtro foi selecionado
+                                    ?>
+                                    <div class="alert alert-info" style="text-align: center; padding: 40px;">
+                                        <i class="fas fa-filter" style="font-size: 48px; color: #6c757d; margin-bottom: 15px;"></i>
+                                        <h4>Selecione os filtros acima para visualizar os produtos</h4>
+                                        <p class="mb-0">Use os filtros de categoria e subcategoria para encontrar os produtos que deseja editar.</p>
+                                    </div>
+                                    <?php
+                                } elseif($results && $results->num_rows > 0) {
+                                    $posicao = 1; // Contador de posição relativa
+                                    while($row = $results->fetch_array()) {
+                                        $imagemPath = !empty($row["imagem"]) ? $row["imagem"] : "https://via.placeholder.com/150?text=Sem+Imagem";
+                                    ?>
                                 <div class="product-card">
                                     <form method="POST" enctype="multipart/form-data">
                                         <input type="hidden" name="id" value="<?php echo $row["id"]; ?>">
+                                        <!-- Preservar filtros após edição -->
+                                        <input type="hidden" name="pro" value="<?php echo $_POST['pro'] ?? ''; ?>">
+                                        <input type="hidden" name="subcat" value="<?php echo $_POST['subcat'] ?? ''; ?>">
                                         
                                         <div class="row g-3">
                                             <!-- Coluna da Imagem -->
@@ -454,16 +725,44 @@
                                                     
                                                     <!-- Botões de Ação -->
                                                     <div class="col-12">
-                                                        <div class="d-flex justify-content-end flex-wrap gap-2">
-                                                            <button class="btn button" type="submit" name="alterar">
-                                                                <i class="fas fa-save"></i> Salvar
-                                                            </button>
-                                                            <button class="btn rounded-circle" type="submit" name="duplicar" title="Duplicar produto" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background-color: #9E3223; border: none;">
-                                                                <i class="fas fa-copy" style="color: white;"></i>
-                                                            </button>
-                                                            <button class="btn button" type="submit" name="eliminar" onclick="return confirm('Tem certeza que deseja eliminar este produto?')">
-                                                                <i class="fas fa-trash"></i> Eliminar
-                                                            </button>
+                                                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                                            <!-- Botões de Ordenação -->
+                                                            <div class="d-flex gap-2">
+                                                                <form method="POST" style="display: inline;">
+                                                                    <input type="hidden" name="produto_id" value="<?php echo $row["id"]; ?>">
+                                                                    <input type="hidden" name="categoria_atual" value="<?php echo $row["categoria"]; ?>">
+                                                                    <input type="hidden" name="subcategoria_atual" value="<?php echo $row["subcategoria_id"]; ?>">
+                                                                    <input type="hidden" name="pro" value="<?php echo $_POST["pro"] ?? ''; ?>">
+                                                                    <input type="hidden" name="subcat" value="<?php echo $_POST["subcat"] ?? ''; ?>">
+                                                                    <button class="btn btn-sm" type="submit" name="mover_cima" title="Mover para cima" style="background-color: #28a745; color: white; border: none;">
+                                                                        <i class="fas fa-arrow-up"></i>
+                                                                    </button>
+                                                                </form>
+                                                                <form method="POST" style="display: inline;">
+                                                                    <input type="hidden" name="produto_id" value="<?php echo $row["id"]; ?>">
+                                                                    <input type="hidden" name="categoria_atual" value="<?php echo $row["categoria"]; ?>">
+                                                                    <input type="hidden" name="subcategoria_atual" value="<?php echo $row["subcategoria_id"]; ?>">
+                                                                    <input type="hidden" name="pro" value="<?php echo $_POST["pro"] ?? ''; ?>">
+                                                                    <input type="hidden" name="subcat" value="<?php echo $_POST["subcat"] ?? ''; ?>">
+                                                                    <button class="btn btn-sm" type="submit" name="mover_baixo" title="Mover para baixo" style="background-color: #ffc107; color: white; border: none;">
+                                                                        <i class="fas fa-arrow-down"></i>
+                                                                    </button>
+                                                                </form>
+                                                                <small class="text-muted align-self-center">Posição: <?php echo $posicao; ?>º</small>
+                                                            </div>
+                                                            
+                                                            <!-- Botões de Edição -->
+                                                            <div class="d-flex gap-2">
+                                                                <button class="btn button" type="submit" name="alterar">
+                                                                    <i class="fas fa-save"></i> Salvar
+                                                                </button>
+                                                                <button class="btn rounded-circle" type="submit" name="duplicar" title="Duplicar produto" style="width: 40px; height: 40px; padding: 0; display: flex; align-items: center; justify-content: center; background-color: #9E3223; border: none;">
+                                                                    <i class="fas fa-copy" style="color: white;"></i>
+                                                                </button>
+                                                                <button class="btn button" type="submit" name="eliminar" onclick="return confirm('Tem certeza que deseja eliminar este produto?')">
+                                                                    <i class="fas fa-trash"></i> Eliminar
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -472,12 +771,23 @@
                                     </form>
                                 </div>
                                 <?php
+                                        $posicao++; // Incrementar posição para o próximo produto
+                                    }
+                                } else {
+                                    // Nenhum produto encontrado com os filtros selecionados
+                                    ?>
+                                    <div class="alert alert-warning" style="text-align: center; padding: 40px;">
+                                        <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #856404; margin-bottom: 15px;"></i>
+                                        <h4>Nenhum produto encontrado</h4>
+                                        <p class="mb-0">Não existem produtos com os filtros selecionados. Tente ajustar os filtros ou adicionar novos produtos.</p>
+                                    </div>
+                                    <?php
                                 }
                                 ?>
                             </div>
                             <?php
                             // Frees the memory associated with a result
-                            $results->free();
+                            if($results) $results->free();
                             $ms->close();
                             ?>
                         </div>
@@ -516,6 +826,39 @@
         subcategoriaSelect.innerHTML = '<option value="">Nenhuma</option>';
         
         if (!categoriaId || categoriaId === '') return;
+        
+        // Buscar subcategorias via AJAX
+        fetch('get_subcategorias.php?categoria_id=' + categoriaId)
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(sub => {
+                    const option = document.createElement('option');
+                    option.value = sub.id;
+                    option.textContent = sub.nome;
+                    subcategoriaSelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Erro ao carregar subcategorias:', error));
+    }
+    
+    function loadSubcategoriasFilter() {
+        const categoriaSelect = document.getElementById('filtro_categoria');
+        const subcategoriaSelect = document.getElementById('filtro_subcategoria');
+        
+        if (!categoriaSelect || !subcategoriaSelect) return;
+        
+        const selectedOption = categoriaSelect.options[categoriaSelect.selectedIndex];
+        const categoriaId = selectedOption.getAttribute('data-id');
+        const categoriaValue = categoriaSelect.value;
+        
+        // Limpar subcategorias
+        subcategoriaSelect.innerHTML = '<option value="-1">Filtrar por subcategoria</option>';
+        subcategoriaSelect.innerHTML += '<option value="20">Todas as subcategorias</option>';
+        
+        // Se selecionou "Todas as categorias" ou nenhuma, não carregar subcategorias
+        if (!categoriaId || categoriaId === '' || categoriaValue === '20' || categoriaValue === '-1') {
+            return;
+        }
         
         // Buscar subcategorias via AJAX
         fetch('get_subcategorias.php?categoria_id=' + categoriaId)
