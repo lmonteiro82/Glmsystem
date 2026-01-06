@@ -98,7 +98,7 @@ try {
         $mail->Host       = 'glmsystem.com';                     //Set the SMTP server to send through
         $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
         $mail->Username   = 'geral@glmsystem.com';                     //SMTP username
-        $mail->Password   = 'Gabriela_2016';                               //SMTP password
+        $mail->Password   = 'Jorge_1977';                               //SMTP password
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;            //Enable implicit TLS encryption
         $mail->Port       = 465;                                   //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
 
